@@ -114,7 +114,22 @@ spec:
     try {
         container(name: 'node', shell: '/bin/bash') {
             checkout scm
-  
+            try {
+                stage('Check for changes') {
+                    sh '''#!/bin/bash
+                        echo "Changed files in commit:"
+                        CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r $(git rev-parse HEAD))
+                        echo "${CHANGED_FILES}"
+
+                        if [[ "${CHANGED_FILES}" == "package.json" ]]; then
+                          exit 1
+                        fi
+                    '''
+                }
+            } catch (e) {
+                abortedBuild = true
+                throw e;
+            }
             stage('Build') {
                 sh '''#!/bin/bash
                     npm install
